@@ -111,7 +111,7 @@ function catalog(q) {
       <div class="fgroup"><h3>Цена до</h3><input class="input" name="max" inputmode="numeric" placeholder="Например, 100 000" value="${f.max || ''}"></div>
       <div class="fgroup"><h3>Бренд</h3>${BRANDS.map((b) => box('brand', b.id, b.name + ' · ' + b.country, PRODUCTS.filter((p) => p.brand === b.id).length)).join('')}</div>
       <div class="fgroup"><h3>Материал</h3>${mats.map((m) => box('material', m, m, PRODUCTS.filter((p) => p.material === m).length)).join('')}</div>
-      <div class="filters-foot"><a class="btn btn-ghost" href="#/catalog">Сбросить</a><button class="btn btn-primary btn-block" type="button" data-action="close-filters">Показать ${list.length}</button></div>
+      <div class="filters-foot"><a class="btn btn-ghost" href="#/catalog">Сбросить</a><button class="btn btn-primary btn-block" type="button" data-action="close-filters">Показать</button></div>
     </form>
     <div><div class="toolbar"><span class="count">${list.length} товаров</span>
       <button class="btn btn-ghost btn-s open-filters" data-action="open-filters">${ic('filter')} Фильтры</button>
@@ -139,7 +139,7 @@ function product(id) {
     <div class="gallery"><div class="g-thumbs">${p.imgs.map((m, i) => `<button class="${i ? '' : 'is-on'}" data-action="thumb" data-i="${i}" aria-label="Фото ${i + 1}">${imgTag(m, '', 200)}</button>`).join('')}</div>
       <div class="g-main" id="gmain" data-imgs="${p.imgs.join(',')}">${imgTag(p.imgs[0], p.title, 1200)}
         <div class="g-tools">${p.has360 ? `<button class="chip" data-action="360">${ic('rotate')} 360°</button>` : ''}<button class="chip" data-action="fullscreen">Во весь экран</button></div>
-        <span class="g-hint">Наведите для зума</span></div></div>
+        <span class="g-hint">${matchMedia('(hover:hover)').matches ? 'Наведите для зума' : 'Нажмите, чтобы увеличить'}</span></div></div>
     <div class="pdp-info">
       <a class="pdp-brand" href="#/catalog?brand=${p.brand}">${esc(p.brandName)} ${ic('chevron', 'ic-s')}</a>
       <h1 class="pdp-title">${esc(p.title)}</h1>
@@ -305,6 +305,8 @@ function route() {
   if (name === 'product') html = product(parts[1]);
   else if (name !== 'catalog') html = (pages[name] || home)();
   app.innerHTML = html;
+  document.body.dataset.page = name;
+  document.body.style.overflow = '';
   if (name === 'catalog') { catalog.last = filterFor(q); catalogAfter(); }
   document.querySelectorAll('[data-nav]').forEach((a) => a.classList.toggle('is-on', a.dataset.nav === name || (name === 'home' && a.dataset.nav === 'home')));
   if (name === 'support') $('#chat-log').scrollTop = 1e6;
@@ -330,7 +332,9 @@ function bindPage(name, q) {
       for (const [k, v] of fd) if (v) n.append(k, v);
       n.set('sort', $('#sort').value); location.hash = '#/catalog?' + n;
     };
-    $('#filters').addEventListener('change', apply); $('#sort').addEventListener('change', apply);
+    window.applyFilters = apply;
+    $('#filters').addEventListener('change', () => { if (!$('#filters').classList.contains('is-open')) apply(); });
+    $('#sort').addEventListener('change', apply);
   }
   if (name === 'support') $('#chat-form').addEventListener('submit', (e) => { e.preventDefault(); const v = $('#chat-input').value.trim(); if (v) { $('#chat-input').value = ''; sendChat(v); } });
   if (name === 'cart') {
@@ -389,8 +393,8 @@ document.addEventListener('click', (e) => {
   if (a === 'fullscreen') { const g = $('#gmain'); modal(`<img src="${g.querySelector('img').src.replace('w=1200', 'w=1800')}" alt="">`, 'full'); }
   if (a === 'copy') { navigator.clipboard?.writeText(b.dataset.v); toast('Артикул скопирован'); }
   if (a === 'quick') sendChat(b.dataset.v);
-  if (a === 'open-filters') $('#filters').classList.add('is-open');
-  if (a === 'close-filters') $('#filters').classList.remove('is-open');
+  if (a === 'open-filters') { $('#filters').classList.add('is-open'); document.body.style.overflow = 'hidden'; }
+  if (a === 'close-filters') { $('#filters').classList.remove('is-open'); document.body.style.overflow = ''; if (b.classList.contains('btn-primary')) window.applyFilters(); }
   if (a === 'rev') { document.querySelectorAll('#rev-filter .chip').forEach((c) => c.classList.toggle('is-on', c === b)); document.querySelectorAll('#rev-list .review').forEach((r) => (r.hidden = b.dataset.v === 'v' ? r.dataset.v !== 'true' : b.dataset.v === 'ph' ? r.dataset.ph !== 'true' : false)); }
   if (a === 'to-wb') toast('Переход в основной каталог WB — вне прототипа');
   if (a === 'call' || a === 'soon') toast('В прототипе недоступно');

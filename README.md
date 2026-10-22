@@ -22,4 +22,8 @@ python3 -m http.server 4173 --directory dist
 
 ## Структура
 
-`dist/index.html` — HTML, CSS и JavaScript сайта. Сборка и установка зависимостей не требуются.
+`dist/index.html` — разметка, `dist/css/style.css` — стили, `dist/js/data.js` — демо-данные, `dist/js/app.js` — логика. Сборка не требуется.
+
+## GitHub Pages
+
+В репозитории есть `.github/workflows/pages.yml`: каждый push в `main` публикует папку `dist`. Один раз включите в GitHub: Settings → Pages → Source: **GitHub Actions**.
